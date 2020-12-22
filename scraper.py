@@ -13,8 +13,8 @@ from sys import exit
 BASE_FORUM_THREAD_URL = "https://madronalabs.com/topics/357-sticky-aalto-patch-thread" 
 
 HTML_PATCH_REGEX = re.compile("&lt[;]Aalto.*\/&gt", re.DOTALL)
+HTML_PRESET_NAME_REGEX = re.compile('presetName=\\"[^\\"]*\\"')
 JSON_PATCH_REGEX = re.compile('{.*}', re.DOTALL)
-PRESET_NAME_REGEX = re.compile('presetName=\\"[^\\"]*\\"')
 
 # Sanity threshold for page fetching
 PAGE_INDEX_THRESHOLD = 300
@@ -82,7 +82,7 @@ def sanitize_json_patch(json_patch):
 
 def write_patches_to_output_dir(html_patches, json_patches, output_dir):
     for html_patch in html_patches:
-        preset_name = re.search(PRESET_NAME_REGEX, html_patch)
+        preset_name = re.search(HTML_PRESET_NAME_REGEX, html_patch)
         if preset_name is None:
             fail('Could not parse html preset name: %s' % match)
         f = open(os.path.join(output_dir, sanitize_html_preset_name(preset_name.group())), "w")
