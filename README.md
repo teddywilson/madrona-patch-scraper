@@ -5,7 +5,7 @@ Basic script to scrape Madrona Labs forums and pull community patches into a loc
 ## Usage
 ```
 pip3 install -r requirements.txt
-python scraper.py 
+python scraper.py --output_dir=/Path/to/your/directory
 ```
 
 ## TODO 
