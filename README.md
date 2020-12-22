@@ -6,6 +6,6 @@ Basic script to scrape Madrona Labs forums and pull community patches into a loc
 
 ## TODO 
 - [ ] Parse all patch types (namely adding json support)
-- [ ] `html_patch_#` -> useful filename
+- [x] `html_patch_#` -> useful filename
 - [ ] Diffing between runs
 - [ ] Symlinking/linking to Madrona discovery folder 
