@@ -55,6 +55,7 @@ def scrape_patches():
 
     return html_patches, json_patches
 
+
 def sanitize_html_preset_name(html_preset_name):
     if not html_preset_name.startswith('presetName="'):
         fail('Found html preset name with invalid prefix: %s' % html_preset_name)
@@ -62,24 +63,28 @@ def sanitize_html_preset_name(html_preset_name):
         fail('Found html preset name with invalid suffix: %s' % html_preset_name)
     return html_preset_name[12:-1].replace('/', '_')
 
+
 def sanitize_html_patch(html_patch):
     if not html_patch.startswith('&lt;Aalto'):
-        fail('Found html_patch with invalid prefix: %s' % html_patch)
+        fail('Found html patch with invalid prefix: %s' % html_patch)
     if not html_patch.endswith('/&gt'):
-        fail('Found html_patch with invalid suffix: %s' % html_patch)
+        fail('Found html patch with invalid suffix: %s' % html_patch)
     return "<" + html_patch[4:-3] + ">"
+
 
 def sanitize_json_preset_name(json_preset_name):
     return json_preset_name.replace('/', '_')
 
+
 def sanitize_json_patch(json_patch):
     return json_patch.replace('<br/>', '')
+
 
 def write_patches_to_output_dir(html_patches, json_patches, output_dir):
     for html_patch in html_patches:
         preset_name = re.search(PRESET_NAME_REGEX, html_patch)
         if preset_name is None:
-            fail('Could not parse preset name: %s' % match)
+            fail('Could not parse html preset name: %s' % match)
         f = open(os.path.join(output_dir, sanitize_html_preset_name(preset_name.group())), "w")
         f.write(sanitize_html_patch(html_patch))
         f.close()
@@ -89,6 +94,7 @@ def write_patches_to_output_dir(html_patches, json_patches, output_dir):
         f = open(os.path.join(output_dir, sanitize_json_preset_name(json_patch['preset'])), "w")
         f.write(json.dumps(json_patch))
         f.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
