@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
-import requests
-import urllib.request
+import json
 import os
 import re
+import requests
 import time
+import urllib.request
 from bs4 import BeautifulSoup
 from sys import exit
 
 BASE_FORUM_THREAD_URL = "https://madronalabs.com/topics/357-sticky-aalto-patch-thread" 
-PATCH_REGEX = re.compile("&lt[;]Aalto.*\/&gt", re.DOTALL)
+
+HTML_PATCH_REGEX = re.compile("&lt[;]Aalto.*\/&gt", re.DOTALL)
+JSON_PATCH_REGEX = re.compile('{.*}', re.DOTALL)
 PRESET_NAME_REGEX = re.compile('presetName=\\"[^\\"]*\\"')
 
 # Sanity threshold for page fetching
@@ -20,39 +23,44 @@ def fail(message):
     print(message)
     exit(1)
 
-# TODO(teddywilson) scrape other patch types
-def scrape_html_patches():
-    html_patches = []
-    page_index = 1
 
+def scrape_patches():
+    html_patches = []
+    json_patches = []
+
+    page_index = 1
     while True and page_index < PAGE_INDEX_THRESHOLD:
         url = BASE_FORUM_THREAD_URL + "?page=%d" % page_index
         page_index += 1
 
         response = requests.get(url)
         if response.status_code != 200:
-            return html_patches
+            break
 
         soup = BeautifulSoup(response.text, "html.parser")
         forum_posts = soup.find_all("div", class_="forum-post")
 
         # Take into account the sticky post
         if len(forum_posts) <= 1:
-            return html_patches
+            break
 
         for forum_post in forum_posts:
-            result = re.findall(PATCH_REGEX, str(forum_post))
-            for match in result:
-                html_patches.append(match)
+            html_result = re.findall(HTML_PATCH_REGEX, str(forum_post))
+            for html_match in html_result:
+                html_patches.append(html_match)
 
-    return html_patches
+            json_result = re.findall(JSON_PATCH_REGEX, str(forum_post))
+            for json_match in json_result:
+                json_patches.append(json_match)
 
-def sanitize_preset_name(preset_name):
-    if not preset_name.startswith('presetName="'):
-        fail('Found preset name with invalid prefix: %s' % preset_name)
-    if not preset_name.endswith('"'):
-        fail('Found preset name with invalid suffix: %s' % preset_name)
-    return preset_name[12:-1].replace('/', '_')
+    return html_patches, json_patches
+
+def sanitize_html_preset_name(html_preset_name):
+    if not html_preset_name.startswith('presetName="'):
+        fail('Found html preset name with invalid prefix: %s' % html_preset_name)
+    if not html_preset_name.endswith('"'):
+        fail('Found html preset name with invalid suffix: %s' % html_preset_name)
+    return html_preset_name[12:-1].replace('/', '_')
 
 def sanitize_html_patch(html_patch):
     if not html_patch.startswith('&lt;Aalto'):
@@ -61,13 +69,25 @@ def sanitize_html_patch(html_patch):
         fail('Found html_patch with invalid suffix: %s' % html_patch)
     return "<" + html_patch[4:-3] + ">"
 
-def write_patches_to_output_dir(html_patches, output_dir):
+def sanitize_json_preset_name(json_preset_name):
+    return json_preset_name.replace('/', '_')
+
+def sanitize_json_patch(json_patch):
+    return json_patch.replace('<br/>', '')
+
+def write_patches_to_output_dir(html_patches, json_patches, output_dir):
     for html_patch in html_patches:
         preset_name = re.search(PRESET_NAME_REGEX, html_patch)
         if preset_name is None:
             fail('Could not parse preset name: %s' % match)
-        f = open(os.path.join(output_dir, sanitize_preset_name(preset_name.group())), "w")
+        f = open(os.path.join(output_dir, sanitize_html_preset_name(preset_name.group())), "w")
         f.write(sanitize_html_patch(html_patch))
+        f.close()
+
+    for json_patch_str in json_patches:
+        json_patch = json.loads(sanitize_json_patch(json_patch_str))
+        f = open(os.path.join(output_dir, sanitize_json_preset_name(json_patch['preset'])), "w")
+        f.write(json.dumps(json_patch))
         f.close()
 
 if __name__ == "__main__":
@@ -80,5 +100,5 @@ if __name__ == "__main__":
         print('Creating directory %s' % args.output_dir)
         os.makedirs(args.output_dir)
 
-    html_patches = scrape_html_patches()
-    write_patches_to_output_dir(html_patches, args.output_dir)
+    html_patches, json_patches  = scrape_patches()
+    write_patches_to_output_dir(html_patches, json_patches, args.output_dir)
