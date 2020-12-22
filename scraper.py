@@ -32,7 +32,7 @@ def scrape_html_patches():
         forum_posts = soup.find_all("div", class_="forum-post")
 
         # Take into account the sticky post
-        if len(forum_posts) < 1:
+        if len(forum_posts) <= 1:
             return html_patches
 
         for forum_post in forum_posts:
