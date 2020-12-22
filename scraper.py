@@ -13,11 +13,9 @@ BASE_FORUM_THREAD_URL = "https://madronalabs.com/topics/357-sticky-aalto-patch-t
 PATCH_REGEX = re.compile("&lt[;]Aalto.*\/&gt", re.DOTALL)
 
 # Sanity threshold for page fetching
-# TODO(teddywilson) this should be much higher
-PAGE_INDEX_THRESHOLD = 3
+PAGE_INDEX_THRESHOLD = 300
 
 # TODO(teddywilson) scrape other patch types
-# TODO(teddywilson) define proper exit conditions
 def scrape_html_patches():
     html_patches = []
     page_index = 1
@@ -31,15 +29,14 @@ def scrape_html_patches():
             return html_patches
 
         soup = BeautifulSoup(response.text, "html.parser")
-        paragraphs = soup.findAll('p')
+        forum_posts = soup.find_all("div", class_="forum-post")
 
-        # TODO(teddywilson) this really isn't likely. we should check that, other than the sticky
-        # post, no posts have been made
-        if len(paragraphs) == 0:
+        # Take into account the sticky post
+        if len(forum_posts) < 1:
             return html_patches
 
-        for paragraph in paragraphs:
-            result = re.findall(PATCH_REGEX, str(paragraph))
+        for forum_post in forum_posts:
+            result = re.findall(PATCH_REGEX, str(forum_post))
             for match in result:
                 html_patches.append(match)
 
