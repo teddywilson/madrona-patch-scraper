@@ -43,9 +43,11 @@ def scrape_patches():
         forum_posts = soup.find_all("div", class_="forum-post")
 
         # Take into account the sticky post
-        if len(forum_posts) <= 1:
+        post_count = len(forum_posts) - 1
+        if post_count == 0:
             break
 
+        print("Fetched " + str(post_count) + " posts on page " + str(page_index - 1) + ".") 
         for forum_post in forum_posts:
             html_result = re.findall(HTML_PATCH_REGEX, str(forum_post))
             for html_match in html_result:
@@ -82,22 +84,32 @@ def sanitize_json_patch(json_patch):
     return json_patch.replace('<br/>', '')
 
 
+def write_patch(output_dir, preset_name, contents):
+    print("Writing preset: " + preset_name + ".")
+    filename = preset_name + PATCH_FILE_SUFFIX
+    f = open(os.path.join(output_dir, filename), "w")
+    f.write(contents)
+    f.close()
+
+
 def write_patches_to_output_dir(html_patches, json_patches, output_dir):
     for html_patch in html_patches:
         preset_name = re.search(HTML_PRESET_NAME_REGEX, html_patch)
         if preset_name is None:
             fail('Could not parse html preset name: %s' % match)
-        filename = sanitize_html_preset_name(preset_name.group()) + PATCH_FILE_SUFFIX
-        f = open(os.path.join(output_dir, filename), "w")
-        f.write(sanitize_html_patch(html_patch))
-        f.close()
+        write_patch(
+          output_dir,
+          sanitize_html_preset_name(preset_name.group()),
+          sanitize_html_patch(html_patch)
+        )        
 
     for json_patch_str in json_patches:
         json_patch = json.loads(sanitize_json_patch(json_patch_str))
-        filename = sanitize_json_preset_name(json_patch['preset']) + PATCH_FILE_SUFFIX
-        f = open(os.path.join(output_dir, filename), "w")
-        f.write(json.dumps(json_patch))
-        f.close()
+        write_patch(
+          output_dir,
+          sanitize_json_preset_name(json_patch['preset']),
+          json.dumps(json_patch)
+        )  
 
 
 if __name__ == "__main__":
