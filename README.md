@@ -9,7 +9,8 @@ python scraper.py --output_dir=/Path/to/your/directory
 ```
 
 ## TODO 
-- [ ] Diffing between runs (or just checking if filename already exists)
-- [ ] Linking to Madrona discovery folder (maybe)
-- [x] Parse all patch types (namely adding json support)
-- [x] `html_patch_#` -> useful filename
+- [ ] Ignore patches that match the default.
+- [ ] Diffing between runs (or just checking if filename already exists).
+- [ ] Linking to Madrona discovery folder (maybe).
+- [x] Parse all patch types (namely adding json support).
+- [x] `html_patch_#` -> useful filename.
